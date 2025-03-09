@@ -47,7 +47,10 @@ const StoryMode = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isMascotVisible, setIsMascotVisible] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
-  const slideRef = useRef<HTMLDivElement>(null);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     if (isOpen) {
@@ -62,9 +65,19 @@ const StoryMode = () => {
   }, [isOpen]);
   
   useEffect(() => {
-    if (isOpen && slideRef.current) {
-      slideRef.current.scrollTop = 0;
-    }
+    if (!isOpen || !scrollContainerRef.current) return;
+    
+    const scrollToCurrentSlide = () => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+      
+      container.scrollTo({
+        top: currentSlide * window.innerHeight,
+        behavior: 'smooth'
+      });
+    };
+    
+    scrollToCurrentSlide();
   }, [currentSlide, isOpen]);
   
   const openStory = () => {
@@ -108,6 +121,83 @@ const StoryMode = () => {
       setIsAnimating(false);
     }, 500);
   };
+  
+  // Handle touch events for swiping
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientY);
+  };
+  
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientY);
+  };
+  
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isSignificantSwipe = Math.abs(distance) > 50;
+    
+    if (isSignificantSwipe) {
+      if (distance > 0) {
+        // Swiped up
+        nextSlide();
+      } else {
+        // Swiped down
+        prevSlide();
+      }
+    }
+    
+    // Reset values
+    setTouchStart(null);
+    setTouchEnd(null);
+  };
+  
+  // Handle scroll events for snap scrolling
+  const handleScroll = () => {
+    if (isScrolling || !scrollContainerRef.current) return;
+    
+    setIsScrolling(true);
+    
+    // Debounce scroll event
+    setTimeout(() => {
+      const container = scrollContainerRef.current;
+      if (!container) {
+        setIsScrolling(false);
+        return;
+      }
+      
+      const scrollPosition = container.scrollTop;
+      const viewportHeight = window.innerHeight;
+      const newSlideIndex = Math.round(scrollPosition / viewportHeight);
+      
+      if (newSlideIndex !== currentSlide && newSlideIndex >= 0 && newSlideIndex < storyData.length) {
+        setCurrentSlide(newSlideIndex);
+      }
+      
+      setIsScrolling(false);
+    }, 100);
+  };
+
+  // Handle wheel events for better scrolling control
+  const handleWheel = (e: React.WheelEvent) => {
+    if (isScrolling) return;
+    
+    e.preventDefault();
+    
+    setIsScrolling(true);
+    
+    if (e.deltaY > 0) {
+      // Scrolling down
+      nextSlide();
+    } else {
+      // Scrolling up
+      prevSlide();
+    }
+    
+    setTimeout(() => {
+      setIsScrolling(false);
+    }, 500);
+  };
 
   return (
     <>
@@ -148,72 +238,94 @@ const StoryMode = () => {
         <MessageCircle size={20} />
       </button>
       
-      {/* Story Modal */}
+      {/* Full-screen Story Mode */}
       <div 
-        className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${
+        className={`fixed inset-0 z-50 transition-opacity duration-300 ${
           isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
       >
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeStory}></div>
-        
-        <div 
-          className="relative z-10 w-full max-w-lg max-h-full h-[80vh] overflow-hidden rounded-xl shadow-2xl"
-          onClick={(e) => e.stopPropagation()}
+        {/* Close Button */}
+        <button 
+          className="absolute top-4 right-4 z-[60] w-10 h-10 flex items-center justify-center rounded-full bg-black/30 text-white hover:bg-black/40 transition-colors"
+          onClick={closeStory}
         >
-          {/* Close Button */}
-          <button 
-            className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/20 text-white hover:bg-black/30 transition-colors"
-            onClick={closeStory}
-          >
-            <X size={18} />
-          </button>
-          
-          {/* Story Content */}
-          <div 
-            ref={slideRef}
-            className={`w-full h-full ${storyData[currentSlide].imageBg} p-8 flex flex-col items-center justify-center text-white overflow-auto`}
-          >
-            <div className="max-w-md mx-auto space-y-8 text-center">
-              <h2 className="text-3xl sm:text-4xl font-bold animate-fade-in">
-                {storyData[currentSlide].title}
-              </h2>
-              
-              <p className="text-lg sm:text-xl animate-fade-in animation-delay-200">
-                {storyData[currentSlide].description}
-              </p>
-            </div>
+          <X size={20} />
+        </button>
+        
+        {/* Progress Indicators */}
+        <div className="absolute top-4 left-0 right-0 flex justify-center z-[60]">
+          <div className="flex space-x-1">
+            {storyData.map((_, index) => (
+              <div 
+                key={index}
+                className={`h-1 rounded-full transition-all duration-300 ${
+                  index === currentSlide ? 'w-10 bg-white' : 'w-4 bg-white/40'
+                }`}
+              />
+            ))}
           </div>
-          
-          {/* Story Progress Indicators */}
-          <div className="absolute top-4 left-4 right-4 flex justify-center z-10">
-            <div className="flex space-x-1">
-              {storyData.map((_, index) => (
-                <div 
-                  key={index}
-                  className={`h-1 rounded-full transition-all duration-300 ${
-                    index === currentSlide ? 'w-8 bg-white' : 'w-4 bg-white/50'
-                  }`}
-                />
-              ))}
+        </div>
+        
+        {/* Navigation Buttons */}
+        <button 
+          className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-black/20 text-white z-[60] transition-opacity ${
+            currentSlide === 0 ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          }`}
+          onClick={prevSlide}
+        >
+          <ChevronLeft size={24} />
+        </button>
+        
+        <button 
+          className="absolute right-4 top-1/2 transform -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-black/20 text-white z-[60]"
+          onClick={nextSlide}
+        >
+          <ChevronRight size={24} />
+        </button>
+        
+        {/* Vertical Snap Scroll Container */}
+        <div 
+          ref={scrollContainerRef}
+          className="h-full w-full overflow-y-auto overscroll-y-contain snap-y snap-mandatory"
+          onScroll={handleScroll}
+          onWheel={handleWheel}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          style={{ scrollSnapType: 'y mandatory' }}
+        >
+          {storyData.map((slide, index) => (
+            <div 
+              key={slide.id}
+              className={`h-screen w-full flex items-center justify-center ${slide.imageBg} snap-start snap-always`}
+            >
+              <div className="max-w-md mx-auto text-white text-center px-8">
+                <h2 
+                  className={`text-3xl sm:text-4xl font-bold mb-6 animate-fade-in`}
+                  style={{ animationDelay: '0.2s' }}
+                >
+                  {slide.title}
+                </h2>
+                
+                <p 
+                  className="text-lg sm:text-xl animate-fade-in"
+                  style={{ animationDelay: '0.4s' }}
+                >
+                  {slide.description}
+                </p>
+                
+                {index === storyData.length - 1 && (
+                  <button
+                    className="mt-8 px-6 py-3 bg-white text-vave-blue rounded-full font-medium shadow-lg transform transition-transform hover:scale-105 animate-fade-in"
+                    style={{ animationDelay: '0.6s' }}
+                    onClick={() => window.location.href = '/services'}
+                  >
+                    Explore Our Solutions
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-          
-          {/* Navigation Buttons */}
-          <button 
-            className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full bg-black/20 text-white z-10 transition-opacity ${
-              currentSlide === 0 ? 'opacity-0 pointer-events-none' : 'opacity-100'
-            }`}
-            onClick={prevSlide}
-          >
-            <ChevronLeft size={24} />
-          </button>
-          
-          <button 
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full bg-black/20 text-white z-10"
-            onClick={nextSlide}
-          >
-            <ChevronRight size={24} />
-          </button>
+          ))}
         </div>
       </div>
     </>
