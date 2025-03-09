@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Check, ChevronDown, Filter, X } from 'lucide-react';
+import { Check, ChevronDown, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -125,7 +125,7 @@ const SolutionsFilter = () => {
 
   return (
     <div 
-      ref={ref}
+      ref={ref as React.RefObject<HTMLDivElement>}
       className={`mb-12 transition-all duration-700 delay-200 ${
         isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
       }`}

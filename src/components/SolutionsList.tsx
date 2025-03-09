@@ -119,7 +119,7 @@ const SolutionCard: React.FC<SolutionCardProps> = ({ solution, isListView }) => 
 
   return (
     <div 
-      ref={ref}
+      ref={ref as React.RefObject<HTMLDivElement>}
       className={cn(
         "group glass-card overflow-hidden transition-all duration-500 hover:shadow-md",
         isListView ? "flex flex-col md:flex-row gap-6" : "flex flex-col",
@@ -247,7 +247,7 @@ const SolutionsList = () => {
   return (
     <div>
       <div 
-        ref={ref}
+        ref={ref as React.RefObject<HTMLDivElement>}
         className={`flex items-center justify-between mb-6 transition-all duration-700 delay-400 ${
           isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
         }`}

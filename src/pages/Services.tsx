@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import SolutionsFilter from '../components/SolutionsFilter';
@@ -22,7 +22,7 @@ const Services = () => {
         <div className="section-container">
           <div className="max-w-3xl mx-auto text-center mb-16">
             <h1 
-              ref={titleRef} 
+              ref={titleRef as React.RefObject<HTMLHeadingElement>} 
               className={`text-4xl md:text-5xl font-medium mb-6 transition-all duration-700 ${
                 isTitleInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
               }`}
@@ -30,7 +30,7 @@ const Services = () => {
               Solutions Discovery
             </h1>
             <p 
-              ref={subtitleRef}
+              ref={subtitleRef as React.RefObject<HTMLParagraphElement>}
               className={`text-lg text-muted-foreground transition-all duration-700 delay-300 ${
                 isSubtitleInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
               }`}

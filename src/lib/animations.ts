@@ -9,7 +9,7 @@ interface UseInViewOptions {
 export const useInView = (options: UseInViewOptions = {}) => {
   const { threshold = 0.1, triggerOnce = true } = options;
   const [isInView, setIsInView] = useState(false);
-  const ref = useRef<HTMLElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const currentRef = ref.current;
