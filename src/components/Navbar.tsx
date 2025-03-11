@@ -22,7 +22,7 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
-            <Link to="/" className="text-vave-gold font-medium text-xl tracking-tight mx-0">
+            <Link to="/" className="text-vave-navy font-medium text-xl tracking-tight mx-0">
               <span className="font-bold">VAVE</span>cafe.agency
             </Link>
           </div>
