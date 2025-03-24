@@ -67,7 +67,7 @@ const Hero = () => {
           <div 
             ref={sentenceRef}
             className="relative min-h-[500px] p-8"
-            style={{ opacity: 0 }}
+            // style={{ opacity: 0 }}
           >
             <div className="glass-card p-8 md:p-10 relative overflow-hidden h-full">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-vave-blue to-vave-cyan" />
